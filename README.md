@@ -6,6 +6,6 @@ Added:
  - Added sm_flags
  - changed sound path (fixed failed  to create encoder for /soundfiles/)
 
-User SM 1.10 to compile this plugins.
+Used SM 1.10 to compile this plugins.
 
 Changed from : https://github.com/rhelgeby/sm-zombiereloaded-3
