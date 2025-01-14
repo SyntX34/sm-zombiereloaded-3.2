@@ -1158,4 +1158,21 @@
 		"#format"	"{1:s},{2:d}"
 		"en"		"Ignited player \"{1}\" for camping in a restricted area (ID: {2})."
 	}
+	"Must be in buyzone"
+	{
+		"en"		"This feature requires that you are in a buyzone."
+	}
+	"Weapons zmarket not enough money"
+	{
+		"en"		"You have insufficient funds."
+	}
+	"Weapons menu zmarket loadout default"
+	{
+		"#format"	"{1:s}"
+		"en"		"Default ({1})"
+	}
+	"Weapons menu zmarket loadout weapons title"
+	{
+		"en"		"ZMarket\nSelect Weapon Loadout:"
+	}
 }

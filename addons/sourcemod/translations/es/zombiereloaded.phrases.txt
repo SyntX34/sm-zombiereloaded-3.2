@@ -651,6 +651,10 @@
 	{
 		"es"		"Solo zona de compra - {1}"
 	}
+	"Must be in buyzone"
+	{
+		"es"		"This feature requires that you are in a buyzone." // TODO: Translate
+	}
 
 	// Menu (ZMarket)
 
@@ -1083,5 +1087,20 @@
 	"Vol Ignite"
 	{
 		"es"		"Quemado jugador \"{1}\" por campear en una zona restringida (ID: {2})."
+	}
+
+	"Weapons zmarket not enough money"
+	{
+		"es"		"You have insufficient funds." // TODO: Translate
+	}
+	"Weapons menu zmarket loadout default"
+	{
+		"#format"	"{1:s}"
+		"es"		"Default ({1})" // TODO: Translate
+	}
+
+	"Weapons menu zmarket loadout empty"
+	{
+		"es"		"ZMarket\nSelect Weapon Loadout:" // TODO: Translate
 	}
 }

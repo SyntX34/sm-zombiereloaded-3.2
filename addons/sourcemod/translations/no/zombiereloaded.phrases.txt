@@ -1083,4 +1083,22 @@
 	{
 		"no"		"Satt fyr på \"{1}\" for opphold i sperret område (ID: {2})."
 	}
+	"Must be in buyzone"
+	{
+		"no"		"This feature requires that you are in a buyzone." // TODO: Translate
+	}
+	"Weapons zmarket not enough money"
+	{
+		"no"		"You have insufficient funds." // TODO: Translate
+	}
+	"Weapons menu zmarket loadout default"
+	{
+ 		"#format"	"{1:s}"
+		"no"		"Default ({1})" // TODO: Translate
+	}
+
+	"Weapons menu zmarket loadout weapons title"
+	{
+		"no"		"ZMarket\nSelect Weapon Loadout:" // TODO: Translate
+	}
 }

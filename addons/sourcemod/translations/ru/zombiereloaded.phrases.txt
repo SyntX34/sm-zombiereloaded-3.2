@@ -1084,4 +1084,22 @@
 	{
 		"ru"		"Игрок подожжен \"{1}\" за отсидку в запрещенной зоне (ID: {2})."
 	}
+	"Must be in buyzone"
+	{
+		"ru"		"This feature requires that you are in a buyzone." // TODO: Translate
+	}
+	"Weapons zmarket not enough money"
+	{
+		"ru"		"You have insufficient funds." // TODO: Translate
+	}
+	"Weapons menu zmarket loadout default"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Default ({1})" // TODO: Translate
+	}
+	"Weapons menu zmarket loadout weapons title"
+	{
+		"ru"		"ZMarket\nSelect Weapon Loadout:" // TODO: Translate
+	}
+	
 }
