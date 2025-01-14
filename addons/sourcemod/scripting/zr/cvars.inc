@@ -79,6 +79,9 @@ enum CvarsList
     Handle:CVAR_WEAPONS_ZMARKET_BUYZONE,
     Handle:CVAR_WEAPONS_ZMARKET_REBUY,
     Handle:CVAR_WEAPONS_ZMARKET_REBUY_AUTO,
+    Handle:CVAR_WEAPONS_ZMARKET_REBUY_PRIMARY,
+    Handle:CVAR_WEAPONS_ZMARKET_REBUY_SECONDARY,
+    Handle:CVAR_WEAPONS_ZMARKET_COMMAND_OUTSIDE_BUYZONE,
     Handle:CVAR_HITGROUPS,
     Handle:CVAR_DAMAGE_HITGROUPS,
     Handle:CVAR_DAMAGE_BLOCK_FF,
@@ -107,6 +110,7 @@ enum CvarsList
     Handle:CVAR_INFECT_MZOMBIE_MAX,
     Handle:CVAR_INFECT_MZOMBIE_COUNTDOWN,
     Handle:CVAR_INFECT_MZOMBIE_RESPAWN,
+    Handle:CVAR_INFECT_MAX_DISTANCE,
     Handle:CVAR_INFECT_EXPLOSION,
     Handle:CVAR_INFECT_FIREBALL,
     Handle:CVAR_INFECT_SMOKE,
@@ -221,10 +225,10 @@ CvarsInit()
     // Create public cvar for tracking.
     decl String:description[64];
     Format(description, sizeof(description), "%s Current version of this plugin", TRANSLATION_PHRASE_PREFIX);
-    CreateConVar("gs_zombiereloaded_version", VERSION, description, FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_UNLOGGED|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
+    CreateConVar("gs_zombiereloaded_version", VERSION, description, FCVAR_SPONLY|FCVAR_UNLOGGED|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
     
     #if defined ADD_VERSION_INFO
-        CreateConVar("zombiereloaded_revision", ZR_VER_REVISION, "Revision number for this plugin in source code repository.", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_UNLOGGED|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
+        	CreateConVar("zombiereloaded_revision", ZR_VER_REVISION, "Revision number for this plugin in source code repository.", FCVAR_SPONLY|FCVAR_UNLOGGED|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
     #endif
     
     // Forward event to modules.
@@ -309,8 +313,10 @@ CvarsCreate()
     g_hCvarsList[CVAR_WEAPONS_ZMARKET]                  =    CreateConVar("zr_weapons_zmarket",             "1",            "Allow player to buy from a list of weapons in the weapons config.");
     g_hCvarsList[CVAR_WEAPONS_ZMARKET_BUYZONE]          =    CreateConVar("zr_weapons_zmarket_buyzone",     "1",            "Requires player to be inside a buyzone to use ZMarket. [Dependency: zr_weapons_zmarket]");
     g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY]            =    CreateConVar("zr_weapons_zmarket_rebuy",       "1",            "Allow players to rebuy their previous weapons. [Dependency: zr_weapons_zmarket]");
-    g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_AUTO]       =    CreateConVar("zr_weapons_zmarket_rebuy_auto",  "1",            "Allow players to automatically rebuy their previous weapons. [Dependency: zr_weapons_zmarket&zr_weapons_zmarket_rebuy]");
-    
+    g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_AUTO]       =    CreateConVar("zr_weapons_zmarket_rebuy_auto",  "1",            "Automatically equip default or loadout weapons. [Dependency: zr_weapons_zmarket&zr_weapons_zmarket_rebuy]");
+    g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_PRIMARY]    =    CreateConVar("zr_weapons_zmarket_rebuy_primary","P90",         "Default primary weapon. [Dependency: zr_weapons_zmarket&zr_weapons_zmarket_rebuy]");
+    g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_SECONDARY]  =    CreateConVar("zr_weapons_zmarket_rebuy_secondary","Elite",     "Default secondary weapon. [Dependency: zr_weapons_zmarket&zr_weapons_zmarket_rebuy]");
+    g_hCvarsList[CVAR_WEAPONS_ZMARKET_COMMAND_OUTSIDE_BUYZONE]  =    CreateConVar("zr_weapons_zmarket_command_outside_buyzone","0", "Allow users to buy weapons outside [1 = allow, 0 = block]");
     
     // ===========================
     // Hitgroups (core)
@@ -333,6 +339,7 @@ CvarsCreate()
     g_hCvarsList[CVAR_INFECT_SPAWNTIME_MAX]             =    CreateConVar("zr_infect_spawntime_max",        "50.0",                             "Maximum time from the start of the round until picking the mother zombie(s).");
     g_hCvarsList[CVAR_INFECT_CONSECUTIVE_BLOCK]         =    CreateConVar("zr_infect_consecutive_block",    "1",                                "Prevent a player from being chosen as mother zombie two rounds in a row.");
     g_hCvarsList[CVAR_INFECT_WEAPONS_DROP]              =    CreateConVar("zr_infect_weapons_drop",         "1",                                "Force player to drop all weapons on infect, disabling this will strip weapons instead.");
+    g_hCvarsList[CVAR_INFECT_MAX_DISTANCE]              =    CreateConVar("zr_infect_max_distance",         "80.0",                             "The maximum allowed distance between a client and an attacker for a successful infection. [0.0 = Disabled]");
     
     // Effects
     g_hCvarsList[CVAR_INFECT_EXPLOSION]                 =    CreateConVar("zr_infect_explosion",            "1",                                "Disabling this will disable the fireball, smoke cloud, and sparks in a more efficient way.");

@@ -74,18 +74,20 @@ void ZTele_OnCommandsCreate()
 void ZTeleOnRoundStart()
 {
     char classname[64];
+
     g_iZTeleSpawnPointsCount = 0;
 
     int entity = INVALID_ENT_REFERENCE;
     while((entity = FindEntityByClassname(entity, "info_player_*")) != INVALID_ENT_REFERENCE)
     {
         GetEntityClassname(entity, classname, sizeof(classname));
+
         if (StrEqual(classname, "info_player_terrorist", true) || StrEqual(classname, "info_player_counterterrorist", true))
         {
-            GetEntPropVector(entity, Prop_Send, "m_vecOrigin", g_vecZTeleSpawnPoints[g_iZTeleSpawnPointsCount][0]);
-            GetEntPropVector(entity, Prop_Send, "m_angRotation", g_vecZTeleSpawnPoints[g_iZTeleSpawnPointsCount][1]);
+             GetEntPropVector(entity, Prop_Send, "m_vecOrigin", g_vecZTeleSpawnPoints[g_iZTeleSpawnPointsCount]);
 
             g_iZTeleSpawnPointsCount++;
+
             if (g_iZTeleSpawnPointsCount >= MAX_PLAYER_SPAWNS)
             {
                 break;
@@ -243,17 +245,9 @@ bool ZTeleClient(int client, bool force = false)
 // TODO: This function is called externally, move to interface.
 void ZTele_TeleportClient(int client)
 {
-    float resetSpeed[3] = {0.0, 0.0, 0.0};
     // Teleport client.
-    if (ZTele_IsRandomSpawnEnabled() && g_iZTeleSpawnPointsCount)
-    {
-        int select = Math_GetRandomInt(0, g_iZTeleSpawnPointsCount - 1);
-        TeleportEntity(client, g_vecZTeleSpawnPoints[select][0], g_vecZTeleSpawnPoints[select][1], resetSpeed);
-    }
-    else
-    {
-        TeleportEntity(client, g_vecZTeleSpawn[client][0], g_vecZTeleSpawn[client][1], resetSpeed);
-    }
+    //TeleportEntity(client, g_vecZTeleSpawn[client], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+    CreateTimer(0.0, Timer_PerformZtele, client);
 }
 
 /**
@@ -471,6 +465,25 @@ public Action ZTele_Timer(Handle timer, int client)
 
     // Allow timer to continue repeating.
     return Plugin_Continue;
+}
+
+
+public Action Timer_PerformZtele(Handle timer, any data)
+{
+    int client = view_as<int>(data);
+    if (!IsClientInGame(client))
+    {
+        return;
+    }
+    if (ZTele_IsRandomPositionEnabled()  && g_iZTeleSpawnPointsCount)
+    {
+        int select = Math_GetRandomInt(0, g_iZTeleSpawnPointsCount - 1);
+        TeleportEntity(client, g_vecZTeleSpawnPoints[select], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+    }
+    else
+    {
+        TeleportEntity(client, g_vecZTeleSpawn[client], NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+    }
 }
 
 bool ZTele_ClientInProgress(int client)

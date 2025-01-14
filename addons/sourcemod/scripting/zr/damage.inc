@@ -93,7 +93,7 @@ DamageLoad()
         TrimString(arrayCmds[x]);
         
         // Prepare intercept for this command.
-        RegConsoleCmd(arrayCmds[x], DamageSuicideIntercept);
+        AddCommandListener(DamageSuicideIntercept, arrayCmds[x]);
     }
     
     // Important: If ZR can be unloaded some day, make sure to remove the listeners and set this to false.
@@ -338,6 +338,25 @@ public ZRTools_Action:DamageOnTakeDamage(client, inflictor, attacker, Float:dama
             return immunityAction;
         }
         
+        // Check if distance between clients is too high. (Anti lagcompensation / longknife)
+        new Float:maxDistance = GetConVarFloat(g_hCvarsList[CVAR_INFECT_MAX_DISTANCE]);
+        if (maxDistance != 0.0)
+        {
+            new Float:clientPosition[3];
+            new Float:attackerPosition[3];
+            GetClientAbsOrigin(client, clientPosition);
+            GetClientAbsOrigin(attacker, attackerPosition);
+            // ignore z axis
+            clientPosition[2] = 0.0;
+            attackerPosition[2] = 0.0;
+            new Float:distance = GetVectorDistance(clientPosition, attackerPosition);
+            // Block infection if distance is higher than allowed.
+            if (distance > maxDistance)
+            {
+                return Plugin_Handled;
+            }
+        }
+        
         // Client is about to be infected, re-add HP so they aren't killed by
         // knife. But only do this when immunity mode is disabled.
         if (ClassGetImmunityMode(client) == Immunity_None)
@@ -399,7 +418,7 @@ public ZRTools_Action:DamageOnTakeDamage(client, inflictor, attacker, Float:dama
  * @param client    The client index.
  * @param argc      The number of arguments in command string.
  */     
-public Action:DamageSuicideIntercept(client, argc)
+public Action:DamageSuicideIntercept(int client, const char[] command, int argc)
 {
     // Get suicide interception settings.
     new bool:suicideAfterInfect = GetConVarBool(g_hCvarsList[CVAR_SUICIDE_AFTER_INFECT]);

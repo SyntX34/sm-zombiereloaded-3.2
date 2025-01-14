@@ -30,6 +30,7 @@
  */
 #define ZMARKET_COOKIE_AUTOREBUY "zr_zmarket_autorebuy"
 #define ZMARKET_COOKIE_REBUY "zr_zmarket_rebuy"
+#define ZMARKET_REBUY_WEAPONS_SLOTS_MAX 1
 /**
  * @endsection
  */
@@ -49,10 +50,6 @@ new g_iZMarketCurType[MAXPLAYERS + 1];
  */
 new Handle:g_hZMarketPurchaseCount[MAXPLAYERS + 1];
 
-/**
- * Cookie handle for auto-rebuy.
- */
-new Handle:g_hZMarketAutoRebuyCookie = INVALID_HANDLE;
 
 /**
  * Whether weapons has been bought automatically. Used to prevent double rebuy
@@ -63,7 +60,8 @@ new bool:g_bZMarketWeaponsBought[MAXPLAYERS + 1];
 /**
  * Cookie handle array for weapon loadouts.
  */
-new Handle:g_hZMarketLoadoutCookie[WEAPONS_SLOTS_MAX + 1];
+new Handle:g_hZMarketLoadoutCookie[ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1];
+new bool:g_bZMarketCommandInitialized = false;
 
 /**
  * Create commands specific to ZMarket.
@@ -72,21 +70,17 @@ ZMarketOnCommandsCreate()
 {
     // Register ZMarket command.
     RegConsoleCmd(SAYHOOKS_KEYWORD_ZMARKET, ZMarketCommand, "Opens custom buymenu.");
+    g_bZMarketCommandInitialized = false;
 }
 
 ZMarketOnCookiesCreate()
 {
-    // Create auto-rebuy cookie handle if doesn't exist.
-    if (g_hZMarketAutoRebuyCookie == INVALID_HANDLE)
-    {
-        g_hZMarketAutoRebuyCookie = RegClientCookie(ZMARKET_COOKIE_AUTOREBUY, "The toggle state of auto-rebuy.", CookieAccess_Protected);
-    }
     
     decl String:rebuycookiename[32];
     decl String:rebuycookiedesc[64];
     
     // x = Weapon slot.
-    for (new x = 0; x < WEAPONS_SLOTS_MAX + 1; x++)
+    for (new x = 0; x < ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1; x++)
     {
         // Format cookie name and description.
         Format(rebuycookiename, sizeof(rebuycookiename), "%s_%d", ZMARKET_COOKIE_REBUY, x);
@@ -98,6 +92,47 @@ ZMarketOnCookiesCreate()
             g_hZMarketLoadoutCookie[x] = RegClientCookie(rebuycookiename, rebuycookiedesc, CookieAccess_Protected);
         }
     }
+}
+
+
+ZMarketLoad()
+{
+    // Do not register commands multiple times
+    if(g_bZMarketCommandInitialized)
+        return;
+    decl String:zmarketcommand[CONFIG_MAX_LENGTH];
+    decl String:weaponname[WEAPONS_MAX_LENGTH];
+    new size = GetArraySize(arrayWeapons);
+    for (new weaponindex = 0; weaponindex < size; weaponindex++)
+    {
+        WeaponsGetZMarketCommand(weaponindex, zmarketcommand, sizeof(zmarketcommand));
+        if(zmarketcommand[0])
+        {
+            WeaponsGetName(weaponindex, weaponname, sizeof(weaponname));
+            RegConsoleCmd(zmarketcommand, ZMarketBuyCommand, weaponname);
+        }
+    }
+    g_bZMarketCommandInitialized = true;
+}
+
+public Action:ZMarketBuyCommand(client, argc)
+{
+    decl String:command[CONFIG_MAX_LENGTH];
+    decl String:zmarketcommand[CONFIG_MAX_LENGTH];
+    decl String:weaponname[WEAPONS_MAX_LENGTH];
+    GetCmdArg(0, command, sizeof(command));
+    new size = GetArraySize(arrayWeapons);
+    for (new weaponindex = 0; weaponindex < size; weaponindex++)
+    {
+        WeaponsGetZMarketCommand(weaponindex, zmarketcommand, sizeof(zmarketcommand));
+        if(StrEqual(command, zmarketcommand))
+        {
+            WeaponsGetName(weaponindex, weaponname, sizeof(weaponname));
+            ZMarketEquip(client, weaponname);
+            return Plugin_Handled;
+        }
+    }
+    return Plugin_Handled;
 }
 
 /**
@@ -126,19 +161,7 @@ ZMarketClientInit(client)
  * @param client		Client index.
  */
 ZMarketOnCookiesCached(client)
-{
-    // Initialize auto-rebuy data.
-    decl String:zmarketautorebuy[8];
-    GetClientCookie(client, g_hZMarketAutoRebuyCookie, zmarketautorebuy, sizeof(zmarketautorebuy));
-    
-    // If the cookie is empty, then set the default value.
-    if (!zmarketautorebuy[0])
-    {
-        // Set cookie to false.
-        CookiesSetClientCookieBool(client, g_hZMarketAutoRebuyCookie, false);
-        return;
-    }
-    
+{    
     // Rebuy wapons (if auto-rebuy is enabled, and not bought already).
     if (!g_bZMarketWeaponsBought[client])
     {
@@ -184,12 +207,6 @@ ZMarketOnClientSpawnPost(client)
  */
 ZMarketCheckRebuy(client)
 {
-    // If auto-rebuy is disabled, then ensure it is also disabled on the client as well.
-    new bool:zmarketrebuyauto = GetConVarBool(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_AUTO]);
-    if (!zmarketrebuyauto)
-    {
-        CookiesSetClientCookieBool(client, g_hZMarketAutoRebuyCookie, false);
-    }
     
     // If client hasn't spawned into the game yet, then stop.
     if (!IsClientConnected(client) || !IsClientInGame(client) || !IsPlayerAlive(client))
@@ -203,12 +220,9 @@ ZMarketCheckRebuy(client)
         return;
     }
     
-    // If auto-rebuy is enabled, then force client to rebuy weapons.
-    if (CookiesGetClientCookieBool(client, g_hZMarketAutoRebuyCookie))
-    {
-        ZMarketRebuy(client, true);
-        g_bZMarketWeaponsBought[client] = true;
-    }
+    // Give default/prefered spawn weapons
+    ZMarketRebuy(client, true);
+    g_bZMarketWeaponsBought[client] = true;
 }
 
 /**
@@ -303,19 +317,13 @@ bool:ZMarketMenuMain(client)
     decl String:getloadout[MENU_LINE_REG_LENGTH];
     decl String:viewloadout[MENU_LINE_REG_LENGTH];
     decl String:rebuy[MENU_LINE_REG_LENGTH];
-    decl String:rebuyauto[MENU_LINE_REG_LENGTH];
     decl String:weaponslist[MENU_LINE_REG_LENGTH];
-    
-    // Get auto-rebuy setting.
-    decl String:rebuyautosetting[MENU_LINE_SMALL_LENGTH];
-    ConfigBoolToSetting(CookiesGetClientCookieBool(client, g_hZMarketAutoRebuyCookie), rebuyautosetting, sizeof(rebuyautosetting), true, client);
     
     // Format menu options.
     Format(title, sizeof(title), "%t\n ", "Weapons menu zmarket main title");
     Format(getloadout, sizeof(getloadout), "%t", "Weapons menu zmarket main get loadout");
     Format(viewloadout, sizeof(viewloadout), "%t", "Weapons menu zmarket main view loadout");
     Format(rebuy, sizeof(rebuy), "%t", "Weapons menu zmarket main rebuy");
-    Format(rebuyauto, sizeof(rebuyauto), "%t", "Weapons menu zmarket main auto-rebuy", rebuyautosetting);
     Format(weaponslist, sizeof(weaponslist), "%t", "Weapons menu zmarket main weapons list");
     
     // Add formatted options to menu.
@@ -323,7 +331,6 @@ bool:ZMarketMenuMain(client)
     AddMenuItem(menu_zmarket_main, "Get Loadout", getloadout, MenuGetItemDraw(zmarketrebuy || zmarketrebuyauto));
     AddMenuItem(menu_zmarket_main, "View Loadout", viewloadout, MenuGetItemDraw(zmarketrebuy || zmarketrebuyauto));
     AddMenuItem(menu_zmarket_main, "Rebuy", rebuy, MenuGetItemDraw(zmarketrebuy || zmarketrebuyauto));
-    AddMenuItem(menu_zmarket_main, "Auto-Rebuy", rebuyauto, MenuGetItemDraw(zmarketrebuyauto));
     AddMenuItem(menu_zmarket_main, "Weapons List", weaponslist);
     
     // Set exit back button.
@@ -374,17 +381,8 @@ public ZMarketMenuMainHandle(Handle:menu_zmarket_main, MenuAction:action, client
                 // Resend menu.
                 ZMarketMenuMain(client);
             }
-            // Auto-rebuy.
-            case 3:
-            {
-                // Toggle the auto-rebuy cookie.
-                ZMarketToggleAutoRebuy(client);
-                
-                // Resend menu.
-                ZMarketMenuMain(client);
-            }
             // Weapons list.
-            case 4:
+            case 3:
             {
                 // Send the weapon types list.
                 ZMarketMenuTypes(client);
@@ -418,8 +416,8 @@ bool:ZMarketMenuLoadout(client)
     new Handle:menu_zmarket_loadout = CreateMenu(ZMarketMenuLoadoutHandle);
     
     // Transfer cookie values into an array.
-    new String:rebuyweapons[WeaponsSlot][WEAPONS_MAX_LENGTH];
-    ZMarketCookiesToArray(client, rebuyweapons, WEAPONS_SLOTS_MAX + 1, sizeof(rebuyweapons[]));
+    new String:rebuyweapons[ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1][WEAPONS_MAX_LENGTH];
+    ZMarketCookiesToArray(client, rebuyweapons, sizeof(rebuyweapons), sizeof(rebuyweapons[]));
     
     SetGlobalTransTarget(client);
     
@@ -439,39 +437,37 @@ bool:ZMarketMenuLoadout(client)
         // If the client doesn't have a weapon in this slot, then set the weapon to the empty translation.
         if (!rebuyweapons[x][0])
         {
-            strcopy(rebuyweapons[x], sizeof(rebuyweapons[]), empty);
+            // Get default weapon for this slot
+            decl String:weaponname[WEAPONS_MAX_LENGTH];
+            switch(x)
+            {
+                case Slot_Primary:
+                {
+                    GetConVarString(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_PRIMARY], weaponname, sizeof(weaponname));
+                }
+                case Slot_Secondary:
+                {
+                    GetConVarString(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_SECONDARY], weaponname, sizeof(weaponname));
+                }
+            }
+            Format(rebuyweapons[x], sizeof(rebuyweapons[]), "%t", "Weapons menu zmarket loadout default", weaponname);
         }
     }
     
-    // Copy "Yes/No" to NVGs string.
-    decl String:nvgsbool[MENU_LINE_SMALL_LENGTH];
-    ConfigBoolToSetting(bool:rebuyweapons[Slot_NVGs][0], nvgsbool, sizeof(nvgsbool), true, client);
     
     decl String:title[MENU_LINE_HUGE_LENGTH];
     decl String:primary[MENU_LINE_REG_LENGTH];
     decl String:secondary[MENU_LINE_REG_LENGTH];
-    decl String:melee[MENU_LINE_REG_LENGTH];
-    decl String:projectile[MENU_LINE_REG_LENGTH];
-    decl String:explosive[MENU_LINE_REG_LENGTH];
-    decl String:nvgs[MENU_LINE_REG_LENGTH];
     
     // Format all the lines of the menu.
     Format(title, sizeof(title), "%t\n ", "Weapons menu zmarket loadout title");
     Format(primary, sizeof(primary), "%t", "Weapons menu zmarket loadout primary", rebuyweapons[Slot_Primary]);
     Format(secondary, sizeof(secondary), "%t", "Weapons menu zmarket loadout secondary", rebuyweapons[Slot_Secondary]);
-    Format(melee, sizeof(melee), "%t", "Weapons menu zmarket loadout melee", rebuyweapons[Slot_Melee]);
-    Format(projectile, sizeof(projectile), "%t", "Weapons menu zmarket loadout projectile", rebuyweapons[Slot_Projectile]);
-    Format(explosive, sizeof(explosive), "%t", "Weapons menu zmarket loadout explosive", rebuyweapons[Slot_Explosive]);
-    Format(nvgs, sizeof(nvgs), "%t", "Weapons menu zmarket loadout nvgs", nvgsbool);
     
     // Add formatted options to menu.
     SetMenuTitle(menu_zmarket_loadout, title);
-    AddMenuItem(menu_zmarket_loadout, "0", primary, MenuGetItemDraw(!StrEqual(rebuyweapons[Slot_Primary], empty)));
-    AddMenuItem(menu_zmarket_loadout, "1", secondary, MenuGetItemDraw(!StrEqual(rebuyweapons[Slot_Secondary], empty)));
-    AddMenuItem(menu_zmarket_loadout, "2", melee, MenuGetItemDraw(!StrEqual(rebuyweapons[Slot_Melee], empty)));
-    AddMenuItem(menu_zmarket_loadout, "3", projectile, MenuGetItemDraw(!StrEqual(rebuyweapons[Slot_Projectile], empty)));
-    AddMenuItem(menu_zmarket_loadout, "4", explosive, MenuGetItemDraw(!StrEqual(rebuyweapons[Slot_Explosive], empty)));
-    AddMenuItem(menu_zmarket_loadout, "5", nvgs, MenuGetItemDraw(bool:rebuyweapons[Slot_NVGs][0]));
+    AddMenuItem(menu_zmarket_loadout, "0", primary);
+    AddMenuItem(menu_zmarket_loadout, "1", secondary);
     
     // Set exit back button.
     SetMenuExitBackButton(menu_zmarket_loadout, true);
@@ -493,11 +489,20 @@ public ZMarketMenuLoadoutHandle(Handle:menu_zmarket_loadout, MenuAction:action, 
     // Client selected an option.
     if (action == MenuAction_Select)
     {
-        // Clear rebuy slot.
-        ZMarketSetRebuyCookie(client, WeaponsSlot:slot, "");
-        
-        // Re-send menu.
-        ZMarketMenuLoadout(client);
+        // Open correct submenu for weapon type
+        switch(slot)
+        {
+            case 0:
+            {
+                g_iZMarketCurType[client] = _:Slot_Primary;
+                ZMarketMenuLoadoutWeapons(client, Slot_Primary);
+            }
+            case 1:
+            {
+                g_iZMarketCurType[client] = _:Slot_Secondary;
+                ZMarketMenuLoadoutWeapons(client, Slot_Secondary);
+            }
+        }
     }
     // Client closed the menu.
     if (action == MenuAction_Cancel)
@@ -512,6 +517,94 @@ public ZMarketMenuLoadoutHandle(Handle:menu_zmarket_loadout, MenuAction:action, 
     else if (action == MenuAction_End)
     {
         CloseHandle(menu_zmarket_loadout);
+    }
+}
+
+
+ZMarketMenuLoadoutWeapons(client, WeaponsSlot:slot)
+{
+    // Create menu handle.
+    new Handle:menu_zmarket_loadout_weapons = CreateMenu(ZMarketMenuLoadoutWeaponsHandle);
+    // Set translation target as client.
+    SetGlobalTransTarget(client);
+    decl String:title[MENU_LINE_TITLE_LENGTH];
+    Format(title, sizeof(title), "%t\n ", "Weapons menu zmarket loadout weapons title");
+    SetMenuTitle(menu_zmarket_loadout_weapons, title);
+    decl String:weaponname[WEAPONS_MAX_LENGTH];
+    decl String:weapondisplay[MENU_LINE_REG_LENGTH];
+    // Get default weapon for this slot
+    switch(slot)
+    {
+        case Slot_Primary:
+        {
+            GetConVarString(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_PRIMARY], weaponname, sizeof(weaponname));
+        }
+        case Slot_Secondary:
+        {
+            GetConVarString(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_SECONDARY], weaponname, sizeof(weaponname));
+        }
+    }
+    // First item = Server default weapon
+    Format(weapondisplay, sizeof(weapondisplay), "%t", "Weapons menu zmarket loadout default", weaponname);
+    AddMenuItem(menu_zmarket_loadout_weapons, "", weapondisplay);
+    new size = GetArraySize(arrayWeapons);
+    for (new weaponindex = 0; weaponindex < size; weaponindex++)
+    {
+        // Get weapons slot
+        new WeaponsSlot:wslot = WeaponsGetSlot(weaponindex);
+        // Does it match with the slot we want?
+        if(wslot != slot)
+            continue;
+        WeaponsGetName(weaponindex, weaponname, sizeof(weaponname));
+        // Get restricted status on the weapon.
+        new bool:restricted = RestrictIsWeaponRestricted(weaponindex);
+        // If weapon is restricted then format "[]" around it.
+        strcopy(weapondisplay, sizeof(weapondisplay), weaponname);
+        if (restricted)
+        {
+            Format(weapondisplay, sizeof(weapondisplay), "[%s]", weaponname);
+        }
+        // Disable weapon if it's restricted.
+        AddMenuItem(menu_zmarket_loadout_weapons, weaponname, weapondisplay, MenuGetItemDraw(!restricted));
+    }
+    // Set exit back button.
+    SetMenuExitBackButton(menu_zmarket_loadout_weapons, true);
+    DisplayMenu(menu_zmarket_loadout_weapons, client, MENU_TIME_FOREVER);
+}
+/**
+ * Called when client selects a weapon in the loadout weapons menu, and handles it.
+ *
+ * @param menu_zmarket_loadout_weapons  Handle of the menu being used.
+ * @param action                        The action done on the menu (see menus.inc, enum MenuAction).
+ * @param client                        The client index.
+ * @param slot                          The slot index selected (starting from 0).
+ */
+public ZMarketMenuLoadoutWeaponsHandle(Handle:menu_zmarket_loadout_weapons, MenuAction:action, client, slot)
+{
+    // Client selected an option.
+    if (action == MenuAction_Select)
+    {
+        // Get name of selected weapon.
+        decl String:weapon[WEAPONS_MAX_LENGTH];
+        GetMenuItem(menu_zmarket_loadout_weapons, slot, weapon, sizeof(weapon));
+        // Update cookie with new weapon.
+        ZMarketSetRebuyCookie(client, WeaponsSlot:g_iZMarketCurType[client], weapon);
+        // Open loadout menu.
+        ZMarketMenuLoadout(client);
+    }
+    // Client closed the menu.
+    if (action == MenuAction_Cancel)
+    {
+        // Client hit "Back" button.
+        if (slot == MenuCancel_ExitBack)
+        {
+            ZMarketMenuLoadout(client);
+        }
+    }
+    // Client hit "Exit" button.
+    else if (action == MenuAction_End)
+    {
+        CloseHandle(menu_zmarket_loadout_weapons);
     }
 }
 
@@ -788,6 +881,9 @@ public ZMarketMenuTypeWeaponsHandle(Handle:menu_zmarket_typeweapons, MenuAction:
  */
 stock bool:ZMarketEquip(client, const String:weapon[], bool:rebuy = false)
 {
+    // if zombie hasn't spawned yet we're always rebuying:
+    if(!g_bZombieSpawned)
+        rebuy = true;
     // Get weapon index.
     new weaponindex = WeaponsNameToIndex(weapon);
     
@@ -802,22 +898,22 @@ stock bool:ZMarketEquip(client, const String:weapon[], bool:rebuy = false)
     new WeaponsSlot:slot = WeaponsGetSlot(weaponindex);
     
     // If client is dead or a zombie, update weapon loadout instead.
-    if (!IsPlayerAlive(client) || InfectIsClientInfected(client))
+    if (!IsPlayerAlive(client))
     {
-        // Update cookie with new weapon.
-        ZMarketSetRebuyCookie(client, slot, weapon);
-        
-        TranslationPrintToChat(client, "Weapons zmarket updated loadout");
+        TranslationPrintToChat(client, "Must be alive");
+        return false;
+    }
+     // If client is a zombie, then stop.
+    if (InfectIsClientInfected(client))
+    {
+        TranslationPrintToChat(client, "Must be human");
         return false;
     }
     
     new bool:zmarketbuyzone = GetConVarBool(g_hCvarsList[CVAR_WEAPONS_ZMARKET_BUYZONE]);
     if (!rebuy && zmarketbuyzone && !WeaponsIsClientInBuyZone(client))
     {
-        // Update cookie with new weapon.
-        ZMarketSetRebuyCookie(client, slot, weapon);
-        
-        TranslationPrintToChat(client, "Weapons zmarket updated loadout");
+        TranslationPrintToChat(client, "Must be in buyzone");
         return false;
     }
     
@@ -888,13 +984,18 @@ stock bool:ZMarketEquip(client, const String:weapon[], bool:rebuy = false)
     new cash = AccountGetClientCash(client);
     
     // If client doesn't have enough money, tell them, resend menu, and then stop.
-    if (cash < itemprice)
+    if(!rebuy)
     {
-        // Update cookie with new weapon.
-        ZMarketSetRebuyCookie(client, slot, weapon);
-        
-        TranslationPrintToChat(client, "Weapons zmarket updated loadout");
-        return false;
+        // Get client's current money.
+        new cash = AccountGetClientCash(client);
+        // If client doesn't have enough money, tell them, resend menu, and then stop.
+        if (cash < itemprice)
+        {
+            TranslationPrintToChat(client, "Weapons zmarket not enough money");
+            return false;
+        }
+        // Set client's new cash after purchase.
+        AccountSetClientCash(client, cash - itemprice);
     }
     
     // Set client's new cash after purchase.
@@ -914,24 +1015,37 @@ stock bool:ZMarketEquip(client, const String:weapon[], bool:rebuy = false)
             if (weapons[slot] > -1)
             {
                 // Force client to drop the weapon.
-                WeaponsForceClientDrop(client, weapons[slot]);
+                if(rebuy)
+                {
+                    // Kill weapon right away to decrease amount of entities on roundstart.
+                    RemoveEdict(weapons[slot]);
+                }
+                else
+                {
+                    // Force client to drop the weapon.
+                    WeaponsForceClientDrop(client, weapons[slot]);
+                }
             }
         }
         
-        // Give client the weapon.
-        GivePlayerItem(client, weaponentity);
+        if (StrEqual(weaponentity, "item_kevlar"))
+        {
+            SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+            SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+        }
+        else
+        {
+            // Give client the weapon.
+           GivePlayerItem(client, weaponentity);
+        }
         
-        // Update cookie with new weapon.
-        ZMarketSetRebuyCookie(client, slot, weapon);
-        
-        // Add 1 to the client's purchase count.
-        ZMarketSetPurchaseCount(client, weapon, 1, true);
         
         // If client isn't rebuying the weapon, then tell them the weapon has been purchased.
         if (!rebuy)
         {
-            // Tell client they bought a weapon.
-            TranslationPrintToChat(client, "Weapons zmarket purchase", weapondisplay);
+            // Add 1 to the client's purchase count.
+            ZMarketSetPurchaseCount(client, weapon, 1, true);
+            // If client isn't rebuying the weapon, then tell them the weapon has been purchased.
         }
     }
     else if (!rebuy)
@@ -990,7 +1104,7 @@ bool:ZMarketGetCurrentLoadout(client)
     }
     
     // If client is a zombie, then tell them they must be human and stop.
-    if (!IsPlayerAlive(client))
+    if (InfectIsClientInfected(client))
     {
         TranslationPrintToChat(client, "Must be human");
         return false;
@@ -1004,7 +1118,7 @@ bool:ZMarketGetCurrentLoadout(client)
     decl String:weaponentity[WEAPONS_MAX_LENGTH];
     
     // x = Weapon slot.
-    for (new x = 0; x < WEAPONS_SLOTS_MAX; x++)
+    for (new x = 0; x < ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1; x++)
     {
         // If slot is empty, then clear this slot in rebuy cache and stop.
         if (weapons[x] == -1)
@@ -1024,17 +1138,6 @@ bool:ZMarketGetCurrentLoadout(client)
         ZMarketSetRebuyCookie(client, WeaponsSlot:x, weaponname);
     }
     
-    // Update nightvision ownership.
-    new bool:nightvision = ToolsGetClientNightVision(client);
-    if (!nightvision)
-    {
-        // Empty rebuy slot.
-        ZMarketSetRebuyCookie(client, Slot_NVGs, "");
-    }
-    else
-    {
-        ZMarketSetRebuyCookie(client, Slot_NVGs, "nvgs");
-    }
     
     // Tell client their loadout has been updated.
     TranslationPrintToChat(client, "Weapons zmarket get current loadout");
@@ -1050,7 +1153,7 @@ bool:ZMarketGetCurrentLoadout(client)
  * @param maxweapons    The max amount of weapons in the array.
  * @param maxlen        The max length of each cookie result.
  */
-stock ZMarketArrayToCookies(client, String:rebuyweapons[WeaponsSlot][], maxweapons, maxlen)
+stock ZMarketArrayToCookies(client, String:rebuyweapons[ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1][], maxweapons, maxlen)
 {
     decl String:rebuycookiename[32];
     new Handle:rebuycookie;
@@ -1076,7 +1179,7 @@ stock ZMarketArrayToCookies(client, String:rebuyweapons[WeaponsSlot][], maxweapo
  * @param maxweapons    The max amount of weapons in the array.
  * @param maxlen        The max length of each cookie result.
  */
-stock ZMarketCookiesToArray(client, String:rebuyweapons[WeaponsSlot][], maxweapons, maxlen)
+stock ZMarketCookiesToArray(client, String:rebuyweapons[ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1][], maxweapons, maxlen)
 {
     decl String:rebuycookiename[32];
     new Handle:rebuycookie;
@@ -1148,53 +1251,38 @@ ZMarketRebuy(client, bool:autorebuy = false)
     }
     
     // Transfer cookie values into an array.
-    new String:rebuyweapons[WeaponsSlot][WEAPONS_MAX_LENGTH];
-    ZMarketCookiesToArray(client, rebuyweapons, WEAPONS_SLOTS_MAX + 1, sizeof(rebuyweapons[]));
+    new String:rebuyweapons[ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1][WEAPONS_MAX_LENGTH];
+    ZMarketCookiesToArray(client, rebuyweapons, sizeof(rebuyweapons), sizeof(rebuyweapons[]));
     
     // x = Weapon slot.
-    for (new x = 0; x < WEAPONS_SLOTS_MAX + 1; x++)
+    for (new x = 0; x < ZMARKET_REBUY_WEAPONS_SLOTS_MAX + 1; x++)
     {
         // If slot is empty, then stop.
         if (!rebuyweapons[x][0])
         {
-            continue;
+            switch(x)
+            {
+                case Slot_Primary:
+                {
+                    GetConVarString(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_PRIMARY], rebuyweapons[x], sizeof(rebuyweapons[]));
+                }
+                case Slot_Secondary:
+                {
+                    GetConVarString(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_SECONDARY], rebuyweapons[x], sizeof(rebuyweapons[]));
+                }
+            }
         }
         
-        ZMarketEquip(client, rebuyweapons[x], true);
+        ZMarketEquip(client, rebuyweapons[x], autorebuy);
+    }
+    if(autorebuy)
+    {
+        // Always equip kevlar and hegrenade
+        ZMarketEquip(client, "Kevlar Vest", autorebuy);
+        ZMarketEquip(client, "HEGrenade", autorebuy);
     }
 }
 
-/**
- * Toggle auto-rebuy on a client.
- * 
- * @param client    The client index.
- */
-ZMarketToggleAutoRebuy(client)
-{
-    // If auto-rebuy is disabled, then stop.
-    new bool:zmarketrebuyauto = GetConVarBool(g_hCvarsList[CVAR_WEAPONS_ZMARKET_REBUY_AUTO]);
-    if (!zmarketrebuyauto)
-    {
-        return;
-    }
-    
-    // Get the cookie value.
-    new bool:autorebuystate = CookiesGetClientCookieBool(client, g_hZMarketAutoRebuyCookie);
-    
-    // Toggle the value.
-    CookiesSetClientCookieBool(client, g_hZMarketAutoRebuyCookie, !autorebuystate);
-    
-    // If auto-rebuy was enabled, then tell client it has been disabled.
-    if (autorebuystate)
-    {
-        TranslationPrintToChat(client, "Weapons zmarket auto-rebuy toggle off");
-    }
-    // If auto-rebuy was disabled, then tell client it has been enabled.
-    else
-    {
-        TranslationPrintToChat(client, "Weapons zmarket auto-rebuy toggle on");
-    }
-}
 
 /**
  * Command callback (zmarket)

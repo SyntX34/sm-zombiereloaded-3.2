@@ -280,6 +280,7 @@ InfectOnClientSpawn(client)
             CS_RespawnPlayer(client);
         }
     }
+    SetEntData(client, 4444, 0, 4);
 }
 
 /**
@@ -803,6 +804,9 @@ InfectHumanToZombie(client, attacker = -1, bool:motherinfect = false, bool:respa
             ZTeleTeleportClient(client);
         }
     }
+
+    SetEntProp(client, Prop_Send, "m_ArmorValue", 0, 1);
+    SetEntProp(client, Prop_Send, "m_bHasHelmet", 0);
     
     // Print message to client.
     TranslationPrintToChat(client, "Infect infected");
@@ -875,6 +879,8 @@ InfectZombieToHuman(client, bool:respawn = false, bool:protect = false)
     {
         SpawnProtectStart(client);
     }
+
+    SetEntData(client, 4444, 0, 4);
     
     // Forward event to modules.
     SEffectsOnClientHuman(client);

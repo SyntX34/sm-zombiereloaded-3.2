@@ -33,6 +33,7 @@
 #include <sdktools>
 #include <clientprefs>
 #include <cstrike>
+#include <morecolors>
 
 #if defined USE_SDKHOOKS
     #include <sdkhooks>
@@ -48,7 +49,7 @@
     #define ACTION_HANDLED      ZRTools_Handled
 #endif
 
-#define VERSION "3.2 [NovaHunterZ Edition]"
+#define VERSION "3.8 [NovaHunterZ Edition]"
 
 // Comment this line to exclude version info command. Enable this if you have
 // the repository and HG installed (Mercurial or TortoiseHG).
