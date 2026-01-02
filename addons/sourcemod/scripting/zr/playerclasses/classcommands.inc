@@ -908,6 +908,11 @@ stock ClassModifyString(classindex, attributeflag, const String:value[])
             strcopy(ClassDataCache[classindex][Class_SM_Flags], 64, value);
             return true;
         }
+        case ZR_CLASS_BOT_ONLY:
+        {
+            strcopy(ClassDataCache[classindex][Class_BOT_Only], 64, value);
+            return true;
+        }
         case ZR_CLASS_DESCRIPTION:
         {
             strcopy(ClassDataCache[classindex][Class_Description], 256, value);

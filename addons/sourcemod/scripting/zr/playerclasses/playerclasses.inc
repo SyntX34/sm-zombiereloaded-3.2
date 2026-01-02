@@ -105,6 +105,7 @@
 #define ZR_CLASS_DEFAULT_FLAGS                  0
 #define ZR_CLASS_DEFAULT_GROUP                  ""
 #define ZR_CLASS_DEFAULT_SM_FLAGS               ""
+#define ZR_CLASS_DEFAULT_BOT_ONLY               ""
 #define ZR_CLASS_DEFAULT_NAME                   "classic"
 #define ZR_CLASS_DEFAULT_DESCRIPTION            "Need brains!!! Arrrrggghh!"
 #define ZR_CLASS_DEFAULT_MODEL_PATH             "models/player/zh/zh_zombie003.mdl"
@@ -190,31 +191,32 @@
 #define ZR_CLASS_FLAGS                  (1<<3)
 #define ZR_CLASS_GROUP                  (1<<4)
 #define ZR_CLASS_SM_FLAGS               (1<<5)
-#define ZR_CLASS_NAME                   (1<<6)
-#define ZR_CLASS_DESCRIPTION            (1<<7)
-#define ZR_CLASS_MODEL_PATH             (1<<8)
-#define ZR_CLASS_MODEL_SKIN_INDEX       (1<<9)
-#define ZR_CLASS_ALPHA_INITIAL          (1<<10)
-#define ZR_CLASS_ALPHA_DAMAGED          (1<<11)
-#define ZR_CLASS_ALPHA_DAMAGE           (1<<12)
-#define ZR_CLASS_OVERLAY_PATH           (1<<13)
-#define ZR_CLASS_NVGS                   (1<<14)
-#define ZR_CLASS_FOV                    (1<<15)
-#define ZR_CLASS_HAS_NAPALM             (1<<16)
-#define ZR_CLASS_NAPALM_TIME            (1<<17)
-#define ZR_CLASS_IMMUNITY_MODE          (1<<18)
-#define ZR_CLASS_IMMUNITY_AMOUNT        (1<<19)
-#define ZR_CLASS_IMMUNITY_COOLDOWN      (1<<20)
-#define ZR_CLASS_NO_FALL_DAMAGE         (1<<21)
-#define ZR_CLASS_HEALTH                 (1<<22)
-#define ZR_CLASS_HEALTH_REGEN_INTERVAL  (1<<23)
-#define ZR_CLASS_HEALTH_REGEN_AMOUNT    (1<<24)
-#define ZR_CLASS_HEALTH_INFECT_GAIN     (1<<25)
-#define ZR_CLASS_KILL_BONUS             (1<<26)
-#define ZR_CLASS_SPEED                  (1<<27)
-#define ZR_CLASS_KNOCKBACK              (1<<28)
-#define ZR_CLASS_JUMP_HEIGHT            (1<<29)
-#define ZR_CLASS_JUMP_DISTANCE          (1<<30)
+#define ZR_CLASS_BOT_ONLY               (1<<6)
+#define ZR_CLASS_NAME                   (1<<7)
+#define ZR_CLASS_DESCRIPTION            (1<<8)
+#define ZR_CLASS_MODEL_PATH             (1<<9)
+#define ZR_CLASS_MODEL_SKIN_INDEX       (1<<10)
+#define ZR_CLASS_ALPHA_INITIAL          (1<<11)
+#define ZR_CLASS_ALPHA_DAMAGED          (1<<12)
+#define ZR_CLASS_ALPHA_DAMAGE           (1<<13)
+#define ZR_CLASS_OVERLAY_PATH           (1<<14)
+#define ZR_CLASS_NVGS                   (1<<15)
+#define ZR_CLASS_FOV                    (1<<16)
+#define ZR_CLASS_HAS_NAPALM             (1<<17)
+#define ZR_CLASS_NAPALM_TIME            (1<<18)
+#define ZR_CLASS_IMMUNITY_MODE          (1<<19)
+#define ZR_CLASS_IMMUNITY_AMOUNT        (1<<20)
+#define ZR_CLASS_IMMUNITY_COOLDOWN      (1<<21)
+#define ZR_CLASS_NO_FALL_DAMAGE         (1<<22)
+#define ZR_CLASS_HEALTH                 (1<<23)
+#define ZR_CLASS_HEALTH_REGEN_INTERVAL  (1<<24)
+#define ZR_CLASS_HEALTH_REGEN_AMOUNT    (1<<25)
+#define ZR_CLASS_HEALTH_INFECT_GAIN     (1<<26)
+#define ZR_CLASS_KILL_BONUS             (1<<27)
+#define ZR_CLASS_SPEED                  (1<<28)
+#define ZR_CLASS_KNOCKBACK              (1<<29)
+#define ZR_CLASS_JUMP_HEIGHT            (1<<30)
+#define ZR_CLASS_JUMP_DISTANCE          (1<<31)
 /**
  * @endsection
  */
@@ -246,6 +248,7 @@ enum ClassAttributes
     Class_Flags,
     String:Class_Group[64],
     String:Class_SM_Flags[64],
+    String:Class_BOT_Only[64],
     
     String:Class_Name[64],
     String:Class_Description[256],
@@ -558,6 +561,7 @@ ClassLoad()
     new String:name[64];
     new String:group[64];
     new String:sm_flags[64];
+    new String:bot_only[64];
     new String:description[256];
     new String:model_path[PLATFORM_MAX_PATH];
     new String:immunity_mode[32];
@@ -589,6 +593,9 @@ ClassLoad()
         
         KvGetString(kvClassData, "sm_flags", sm_flags, sizeof(sm_flags), ZR_CLASS_DEFAULT_SM_FLAGS);
         strcopy(ClassData[ClassCount][Class_SM_Flags], 64, sm_flags);
+
+        KvGetString(kvClassData, "bot_only", bot_only, sizeof(bot_only), ZR_CLASS_DEFAULT_BOT_ONLY);
+        strcopy(ClassData[ClassCount][Class_BOT_Only], 64, bot_only);
         
         KvGetString(kvClassData, "name", name, sizeof(name), ZR_CLASS_DEFAULT_NAME);
         strcopy(ClassData[ClassCount][Class_Name], 64, name);
@@ -748,6 +755,7 @@ bool:ClassReloadDataCache()
         ClassDataCache[classindex][Class_Flags] = ClassData[classindex][Class_Flags];
         strcopy(ClassDataCache[classindex][Class_Group], 64, ClassData[classindex][Class_Group]);
         strcopy(ClassDataCache[classindex][Class_SM_Flags], 64, ClassData[classindex][Class_SM_Flags]);
+        strcopy(ClassDataCache[classindex][Class_BOT_Only], 64, ClassData[classindex][Class_BOT_Only]);
         strcopy(ClassDataCache[classindex][Class_Name], 64, ClassData[classindex][Class_Name]);
         strcopy(ClassDataCache[classindex][Class_Description], 256, ClassData[classindex][Class_Description]);
         
@@ -815,6 +823,7 @@ bool:ClassReloadPlayerCache(client, classindex, cachetype = ZR_CLASS_CACHE_MODIF
             ClassPlayerCache[client][Class_Flags] = ClassData[classindex][Class_Flags];
             strcopy(ClassPlayerCache[client][Class_Group], 64, ClassData[classindex][Class_Group]);
             strcopy(ClassPlayerCache[client][Class_SM_Flags], 64, ClassData[classindex][Class_SM_Flags]);
+            strcopy(ClassPlayerCache[client][Class_BOT_Only], 64, ClassData[classindex][Class_BOT_Only]);
             strcopy(ClassPlayerCache[client][Class_Name], 64, ClassData[classindex][Class_Name]);
             strcopy(ClassPlayerCache[client][Class_Description], 256, ClassData[classindex][Class_Description]);
             
@@ -857,6 +866,7 @@ bool:ClassReloadPlayerCache(client, classindex, cachetype = ZR_CLASS_CACHE_MODIF
             ClassPlayerCache[client][Class_Flags] = ClassDataCache[classindex][Class_Flags];
             strcopy(ClassPlayerCache[client][Class_Group], 64, ClassDataCache[classindex][Class_Group]);
             strcopy(ClassPlayerCache[client][Class_SM_Flags], 64, ClassDataCache[classindex][Class_SM_Flags]);
+            strcopy(ClassPlayerCache[client][Class_BOT_Only], 64, ClassDataCache[classindex][Class_BOT_Only]);
             strcopy(ClassPlayerCache[client][Class_Name], 64, ClassDataCache[classindex][Class_Name]);
             strcopy(ClassPlayerCache[client][Class_Description], 256, ClassDataCache[classindex][Class_Description]);
             
@@ -1356,6 +1366,10 @@ ClassDumpData(index, cachetype, String:buffer[], maxlen)
     
     ClassGetSM_Flags(index, format_buffer, sizeof(format_buffer), cachetype);
     Format(attribute, sizeof(attribute), "sm_flags:               \"%s\"\n", format_buffer);
+    cellcount += StrCat(buffer, maxlen, attribute);
+
+    ClassGetBot_Only(index, format_buffer, sizeof(format_buffer), cachetype);
+    Format(attribute, sizeof(attribute), "bot_only:               \"%s\"\n", format_buffer);
     cellcount += StrCat(buffer, maxlen, attribute);
     
     ClassGetName(index, format_buffer, sizeof(format_buffer), cachetype);

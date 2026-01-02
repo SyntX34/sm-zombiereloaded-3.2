@@ -458,7 +458,31 @@ public Action:InfectMotherZombie(Handle:timer)
     
     // Create eligible player list.
     new Handle:arrayEligibleClients = INVALID_HANDLE;
-    new eligibleclients = ZRCreateEligibleClientList(arrayEligibleClients, true, true, true);
+    
+    // Check if we should ignore bots for mother zombie selection
+    new bool:ignoreBots = GetConVarBool(g_hCvarsList[CVAR_INFECT_IGNOREBOT_PLAYERS]);
+    new requirePlayers = GetConVarInt(g_hCvarsList[CVAR_INFECT_NEEDPLAYERS]);
+    
+    // Count real players (non-bots)
+    new realPlayerCount = 0;
+    for (new client = 1; client <= MaxClients; client++)
+    {
+        if (IsClientInGame(client) && IsPlayerAlive(client) && !IsFakeClient(client))
+        {
+            realPlayerCount++;
+        }
+    }
+    
+    // Determine if we should include bots in eligible list
+    new bool:includeBots = true;
+    if (ignoreBots && realPlayerCount >= requirePlayers)
+    {
+        // Enough real players, ignore bots
+        includeBots = false;
+    }
+    
+    // Create eligible client list, with bot inclusion based on settings
+    new eligibleclients = ZRCreateEligibleClientList(arrayEligibleClients, true, true, true, includeBots);
     
     // If there are no eligible client's then stop.
     if (!eligibleclients)
@@ -479,9 +503,22 @@ public Action:InfectMotherZombie(Handle:timer)
     new min = GetConVarInt(g_hCvarsList[CVAR_INFECT_MZOMBIE_MIN]);
     new max = GetConVarInt(g_hCvarsList[CVAR_INFECT_MZOMBIE_MAX]);
     
-    // Count valid human clients.
-    new humancount;
-    ZRCountValidClients(_, humancount, _, true);
+    // Count valid human clients (considering bot filtering)
+    new humancount = 0;
+    for (new client = 1; client <= MaxClients; client++)
+    {
+        if (IsClientInGame(client) && IsPlayerAlive(client))
+        {
+            if (!InfectIsClientInfected(client))
+            {
+                // Check if this client should be counted
+                if (includeBots || !IsFakeClient(client))
+                {
+                    humancount++;
+                }
+            }
+        }
+    }
     
     // Get and validate infection mode. This will also log a warning on error.
     new InfectMode:mode = InfectGetModeOrFail();
@@ -538,6 +575,12 @@ public Action:InfectMotherZombie(Handle:timer)
             // Get a random number between the range.
             mothercount = Math_GetRandomInt(min, max);
         }
+    }
+    
+    // Limit mothercount to available eligible clients
+    if (mothercount > eligibleclients)
+    {
+        mothercount = eligibleclients;
     }
     
     // Infect players.

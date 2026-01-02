@@ -28,9 +28,9 @@
 /**
  * @section Defines for min/max moaning sound file index.
  */
-#define SOUND_MOAN_PATH "novahunterz/zombiereloaded/voice/zombie_voice_idle%d.mp3" // %d is sound file index
+#define SOUND_MOAN_PATH "novahunterz/zombiehordereloaded/voice/pz__voice_idle%d.wav" // %d is sound file index
 #define SOUND_MOAN_MIN 1
-#define SOUND_MOAN_MAX 14
+#define SOUND_MOAN_MAX 15
 /**
  * @endsection
  */
@@ -38,9 +38,9 @@
 /**
  * @section Defines for min/max groan sound file index.
  */
-#define SOUND_GROAN_PATH "novahunterz/zombiereloaded/pain/zombie_pain%d.mp3" // %d is sound file index
+#define SOUND_GROAN_PATH "novahunterz/zombiehordereloaded/pain/pz_voice_pain%d.wav" // %d is sound file index
 #define SOUND_GROAN_MIN 1
-#define SOUND_GROAN_MAX 6
+#define SOUND_GROAN_MAX 7
 /**
  * @endsection
  */
@@ -48,9 +48,9 @@
 /**
  * @section Defines for min/max death sound file index.
  */
-#define SOUND_DEATH_PATH "novahunterz/zombiereloaded/die/zombie_die%d.mp3" // %d is sound file index
+#define SOUND_DEATH_PATH "novahunterz/zombiehordereloaded/die/pz_voice_die%d.wav" // %d is sound file index
 #define SOUND_DEATH_MIN 1
-#define SOUND_DEATH_MAX 3
+#define SOUND_DEATH_MAX 4
 /**
  * @endsection
  */
@@ -94,6 +94,62 @@ ZombieSoundsClientInit(client)
     // Reset command counter and make sure there's no timer running.
     g_SEffectsCommandCount[client] = 0;
     ZREndTimer(g_hSEffectsCommandTimer[client]);
+}
+
+void PrecacheSounds()
+{
+        char sound[PLATFORM_MAX_PATH];
+
+    // Precache and add moan sounds to download table
+    for (int i = SOUND_MOAN_MIN; i <= SOUND_MOAN_MAX; i++)
+    {
+        // Format the sound path with the index
+        Format(sound, sizeof(sound), SOUND_MOAN_PATH, i);
+
+        // Prepend "sound/" to the path for precaching and downloading
+        char fullSoundPath[PLATFORM_MAX_PATH];
+        Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+
+        // Precache the sound
+        PrecacheSound(sound, true);
+
+        // Add the sound to the download table
+        AddFileToDownloadsTable(fullSoundPath);
+    }
+
+    // Precache and add groan sounds to download table
+    for (int i = SOUND_GROAN_MIN; i <= SOUND_GROAN_MAX; i++)
+    {
+        // Format the sound path with the index
+        Format(sound, sizeof(sound), SOUND_GROAN_PATH, i);
+
+        // Prepend "sound/" to the path for precaching and downloading
+        char fullSoundPath[PLATFORM_MAX_PATH];
+        Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+
+        // Precache the sound
+        PrecacheSound(sound, true);
+
+        // Add the sound to the download table
+        AddFileToDownloadsTable(fullSoundPath);
+    }
+
+    // Precache and add death sounds to download table
+    for (int i = SOUND_DEATH_MIN; i <= SOUND_DEATH_MAX; i++)
+    {
+        // Format the sound path with the index
+        Format(sound, sizeof(sound), SOUND_DEATH_PATH, i);
+
+        // Prepend "sound/" to the path for precaching and downloading
+        char fullSoundPath[PLATFORM_MAX_PATH];
+        Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+
+        // Precache the sound
+        PrecacheSound(sound, true);
+
+        // Add the sound to the download table
+        AddFileToDownloadsTable(fullSoundPath);
+    }
 }
 
 /**

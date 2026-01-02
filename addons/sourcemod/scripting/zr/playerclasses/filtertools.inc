@@ -828,6 +828,10 @@ stock bool:ClassFilterMatch(index, filter[ClassFilter], cachetype = ZR_CLASS_CAC
     decl String:sm_flags[64];
     sm_flags[0] = 0;
     ClassGetSM_Flags(index, sm_flags, sizeof(sm_flags), cachetype);
+
+    decl String:bot_only[64];
+    bot_only[0] = 0;
+    ClassGetBot_Only(index, bot_only, sizeof(bot_only), cachetype);
     
     // Check if a client is specified in the filter.
     new client = filter[ClassFilter_Client];
@@ -854,6 +858,26 @@ stock bool:ClassFilterMatch(index, filter[ClassFilter], cachetype = ZR_CLASS_CAC
             if(GetUserFlagBits(client) & flags != flags)
                 return false;
         }
+
+        if (strlen(bot_only))
+        {
+            bool isBotOnly = (StrContains(bot_only, "yes", false) != -1 || 
+                            StrContains(bot_only, "true", false) != -1 ||
+                            StrContains(bot_only, "1", false) != -1 ||
+                            StrEqual(bot_only, "bot", false) ||
+                            StrEqual(bot_only, "bots", false) ||
+                            StrEqual(bot_only, "botonly", false));
+            
+            if (isBotOnly)
+            {
+                if (!IsFakeClient(client))
+                {
+                    return false;
+                }
+            }
+            // For ANY other value ("false", "no", "0", "both", "all", etc.)
+            // Allow everyone (both humans and bots)
+        }
     }
     
     // Check if classes with groups are set to be excluded.
@@ -866,6 +890,10 @@ stock bool:ClassFilterMatch(index, filter[ClassFilter], cachetype = ZR_CLASS_CAC
         }
         // Exclude class if it requires flags.
         if (strlen(sm_flags))
+        {
+            return false;
+        }
+        if (strlen(bot_only))
         {
             return false;
         }

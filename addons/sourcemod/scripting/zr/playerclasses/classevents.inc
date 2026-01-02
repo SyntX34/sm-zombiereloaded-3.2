@@ -372,8 +372,17 @@ ClassOnClientInfected(client, bool:motherzombie = false)
         // flags.
         isadmin = ZRIsClientAdmin(client) ? ZR_CLASS_FLAG_ADMIN_ONLY : 0;
         
-        // Get default mother zombie setting.
-        GetConVarString(g_hCvarsList[CVAR_CLASSES_DEFAULT_M_ZOMB], motherzombiesetting, sizeof(motherzombiesetting));
+        // Check if client is a bot
+        if (IsFakeClient(client))
+        {
+            // BOT mother zombie - use bot mother zombie setting
+            GetConVarString(g_hCvarsList[CVAR_CLASSES_DEFAULT_BM_ZOMB], motherzombiesetting, sizeof(motherzombiesetting));
+        }
+        else
+        {
+            // HUMAN mother zombie - use regular mother zombie setting
+            GetConVarString(g_hCvarsList[CVAR_CLASSES_DEFAULT_M_ZOMB], motherzombiesetting, sizeof(motherzombiesetting));
+        }
         
         if (StrEqual(motherzombiesetting, "disabled", false))
         {

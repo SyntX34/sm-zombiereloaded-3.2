@@ -166,6 +166,7 @@ public OnPluginStart()
     CommandsInit();
     WeaponsInit();
     EventInit();
+    PrecacheSounds();
 }
 
 /**

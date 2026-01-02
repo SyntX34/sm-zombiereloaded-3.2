@@ -117,7 +117,7 @@ Float:ZRConvertUnitsFloat(Float:number, Float:conversion)
  * @param human                 Client is only eligible if human.
  * @param immunity              True to ignore clients immune from mother infect, false to count them.
  */  
-stock ZRCreateEligibleClientList(&Handle:arrayEligibleClients, bool:team = false, bool:alive = false, bool:human = false)
+stock ZRCreateEligibleClientList(&Handle:arrayEligibleClients, bool:team = false, bool:alive = false, bool:human = false, bool:includeBots = true)
 {
     // Create array.
     arrayEligibleClients = CreateArray();
@@ -128,6 +128,12 @@ stock ZRCreateEligibleClientList(&Handle:arrayEligibleClients, bool:team = false
     {
         // If client isn't in-game, then stop.
         if (!IsClientInGame(x))
+        {
+            continue;
+        }
+        
+        // Check if we should include bots.
+        if (!includeBots && IsFakeClient(x))
         {
             continue;
         }

@@ -269,6 +269,27 @@ stock ClassGetSM_Flags(index, String:buffer[], maxlen, cachetype = ZR_CLASS_CACH
     return -1;
 }
 
+stock ClassGetBot_Only(index, String:buffer[], maxlen, cachetype = ZR_CLASS_CACHE_PLAYER)
+{
+    switch (cachetype)
+    {
+        case ZR_CLASS_CACHE_ORIGINAL:
+        {
+            return strcopy(buffer, maxlen, ClassData[index][Class_BOT_Only]);
+        }
+        case ZR_CLASS_CACHE_MODIFIED:
+        {
+            return strcopy(buffer, maxlen, ClassDataCache[index][Class_BOT_Only]);
+        }
+        case ZR_CLASS_CACHE_PLAYER:
+        {
+            return strcopy(buffer, maxlen, ClassPlayerCache[index][Class_BOT_Only]);
+        }
+    }
+    return -1;
+}
+
+
 /**
  * Gets the class name displayed in the class menu.
  *
@@ -1163,6 +1184,10 @@ stock ClassAttributeNameToFlag(const String:attributename[])
     else if (StrEqual(attributename, "group", false))
     {
         return ZR_CLASS_SM_FLAGS;
+    }
+    else if (StrEqual(attributename, "group", false))
+    {
+        return ZR_CLASS_BOT_ONLY;
     }
     else if (StrEqual(attributename, "name", false))
     {

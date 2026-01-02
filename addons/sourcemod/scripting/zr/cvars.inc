@@ -60,6 +60,7 @@ enum CvarsList
     Handle:CVAR_CLASSES_SAVE,
     Handle:CVAR_CLASSES_DEFAULT_ZOMBIE,
     Handle:CVAR_CLASSES_DEFAULT_M_ZOMB,
+    Handle:CVAR_CLASSES_DEFAULT_BM_ZOMB,
     Handle:CVAR_CLASSES_DEFAULT_HUMAN,
     Handle:CVAR_CLASSES_DEFAULT_ADMIN,
     Handle:CVAR_CLASSES_DEFAULT_ADMIN_MODE,
@@ -100,6 +101,8 @@ enum CvarsList
     Handle:CVAR_ROUNDEND_OVERLAY_ZOMBIE,
     Handle:CVAR_ROUNDEND_OVERLAY_HUMAN,
     Handle:CVAR_ROUNDEND_BALANCE_TEAMS,
+    Handle:CVAR_INFECT_IGNOREBOT_PLAYERS,
+    Handle:CVAR_INFECT_NEEDPLAYERS,
     Handle:CVAR_INFECT_SPAWNTIME_MIN,
     Handle:CVAR_INFECT_SPAWNTIME_MAX,
     Handle:CVAR_INFECT_CONSECUTIVE_BLOCK,
@@ -280,6 +283,7 @@ CvarsCreate()
     g_hCvarsList[CVAR_CLASSES_SAVE]                     =    CreateConVar("zr_classes_save",                    "1",            "Save players' class selections in server cookies and restore when connecting. [Override: zr_classes_default_*]");
     g_hCvarsList[CVAR_CLASSES_DEFAULT_ZOMBIE]           =    CreateConVar("zr_classes_default_zombie",          "random",       "Zombie class assigned to players on connect. [\"random\" = Random zombie class | \"\" = Class config default]");
     g_hCvarsList[CVAR_CLASSES_DEFAULT_M_ZOMB]           =    CreateConVar("zr_classes_default_mother_zombie",   "motherzombies","Zombie class assigned to mother zombies. [\"motherzombies\" = Random mother zombie class | \"random\" = Random regular zombie class | \"disabled\" = Don't change class on mother zombies]");
+    g_hCvarsList[CVAR_CLASSES_DEFAULT_BM_ZOMB]           =    CreateConVar("zr_classes_default_bot_mother_zombie",   "motherzombies","Zombie class assigned to bot mother zombies. [\"motherzombies\" = Random mother zombie class | \"random\" = Random regular zombie class | \"disabled\" = Don't change class on mother zombies]");
     g_hCvarsList[CVAR_CLASSES_DEFAULT_HUMAN]            =    CreateConVar("zr_classes_default_human",           "random",       "Human class assigned to players on connect. [\"random\" = Random human class | \"\" = Class config default]");
     g_hCvarsList[CVAR_CLASSES_DEFAULT_ADMIN]            =    CreateConVar("zr_classes_default_admin",           "default",      "(Not implemented!) Admin-only class assigned to admins on connect, if any. [\"default\" = Default human class | \"random\" = Random admin-only class]");
     g_hCvarsList[CVAR_CLASSES_DEFAULT_ADMIN_MODE]       =    CreateConVar("zr_classes_default_admin_mode",      "random",       "(Incomplete) Admin-mode class assigned to admins on connect. Do not confuse this with admin-only classes. [\"random\" = Random admin class | \"\" = Class config default]");
@@ -329,6 +333,8 @@ CvarsCreate()
     // ===========================
     
     // General
+    g_hCvarsList[CVAR_INFECT_IGNOREBOT_PLAYERS]              =    CreateConVar("zr_infect_ignorebots",         "1",                          "Ignore bots to spawn as a mother zombie if there are enough players.");
+    g_hCvarsList[CVAR_INFECT_NEEDPLAYERS]               =    CreateConVar("zr_infect_requireplayers",          "4", "Real real players to use \"zr_infect_ignorebots\" ");
     g_hCvarsList[CVAR_INFECT_MZOMBIE_MODE]              =    CreateConVar("zr_infect_mzombie_mode",         "dynamic",                          "Mother zombie infection mode. ['dynamic' = every n-th zombie (ratio) | 'absolute' = n zombies (ratio) | 'range' = min/max]");
     g_hCvarsList[CVAR_INFECT_MZOMBIE_RATIO]             =    CreateConVar("zr_infect_mzombie_ratio",        "7",                                "Dynamic mode: Infection ratio. Every n-th player is infected. | Absolute mode: Number of zombies to infect (positive ratio), or number of humans to keep (negative ratio).");
     g_hCvarsList[CVAR_INFECT_MZOMBIE_MIN]               =    CreateConVar("zr_infect_mzombie_min",          "1",                                "Minimum number of mother zombies. Range mode only, cannot be zero.");
