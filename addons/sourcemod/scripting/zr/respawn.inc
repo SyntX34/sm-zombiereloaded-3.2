@@ -80,6 +80,11 @@ RespawnOnClientSpawn(client)
  * 
  * @param client    The client index.
  */
+/**
+ * Client has been killed.
+ * 
+ * @param client    The client index.
+ */
 RespawnOnClientDeath(client, attacker, const String:weapon[])
 {
     // If client is a zombie, check if they were killed by world.
@@ -104,6 +109,13 @@ RespawnOnClientDeath(client, attacker, const String:weapon[])
     // If respawn is disabled, stop here.
     new bool:respawn = GetConVarBool(g_hCvarsList[CVAR_RESPAWN]);
     if (!respawn)
+    {
+        return;
+    }
+    
+    // Check if client is a bot and if bot respawn is disabled
+    new bool:respawnBots = GetConVarBool(g_hCvarsList[CVAR_RESPAWN_BOTS]);
+    if (IsFakeClient(client) && !respawnBots)
     {
         return;
     }
@@ -150,10 +162,26 @@ RespawnOnRoundEnd()
  *
  * @return      True if the player was spawned, false otherwise.
  */
+/**
+ * Spawns a player into the round.
+ * 
+ * @param client            The client index.
+ * @param zombie            Respawn as zombie.
+ * @param zombieIfSuicide   Respawn as zombie if killed by world damage.
+ *
+ * @return      True if the player was spawned, false otherwise.
+ */
 bool:RespawnSpawnClient(client, bool:zombie = false, bool:zombieIfSuicide = false)
 {
     // If client isn't in-game, then stop.
     if (!IsClientInGame(client))
+    {
+        return false;
+    }
+    
+    // Check if client is a bot and if bot respawn is disabled
+    new bool:respawnBots = GetConVarBool(g_hCvarsList[CVAR_RESPAWN_BOTS]);
+    if (IsFakeClient(client) && !respawnBots)
     {
         return false;
     }

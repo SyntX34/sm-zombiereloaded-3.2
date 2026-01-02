@@ -870,13 +870,20 @@ stock bool:ClassFilterMatch(index, filter[ClassFilter], cachetype = ZR_CLASS_CAC
             
             if (isBotOnly)
             {
+                // Only bots can use this class
                 if (!IsFakeClient(client))
                 {
                     return false;
                 }
             }
-            // For ANY other value ("false", "no", "0", "both", "all", etc.)
-            // Allow everyone (both humans and bots)
+            else
+            {
+                // This class is not bot-only, so only humans can use it
+                if (IsFakeClient(client))
+                {
+                    return false;
+                }
+            }
         }
     }
     
