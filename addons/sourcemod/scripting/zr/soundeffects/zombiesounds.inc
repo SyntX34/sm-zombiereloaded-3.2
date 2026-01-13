@@ -26,36 +26,6 @@
  */
 
 /**
- * @section Defines for min/max moaning sound file index.
- */
-#define SOUND_MOAN_PATH "novahunterz/zombiehordereloaded/voice/pz__voice_idle%d.wav" // %d is sound file index
-#define SOUND_MOAN_MIN 1
-#define SOUND_MOAN_MAX 15
-/**
- * @endsection
- */
-
-/**
- * @section Defines for min/max groan sound file index.
- */
-#define SOUND_GROAN_PATH "novahunterz/zombiehordereloaded/pain/pz_voice_pain%d.wav" // %d is sound file index
-#define SOUND_GROAN_MIN 1
-#define SOUND_GROAN_MAX 7
-/**
- * @endsection
- */
-
-/**
- * @section Defines for min/max death sound file index.
- */
-#define SOUND_DEATH_PATH "novahunterz/zombiehordereloaded/die/pz_voice_die%d.wav" // %d is sound file index
-#define SOUND_DEATH_MIN 1
-#define SOUND_DEATH_MAX 4
-/**
- * @endsection
- */
-
-/**
  * Zombie sound types
  */
 enum ZombieSounds
@@ -81,6 +51,19 @@ new g_SEffectsCommandCount[MAXPLAYERS + 1];
  */
 new Handle:g_hSEffectsCommandTimer[MAXPLAYERS + 1];
 
+
+/**
+ * Initialize zombie sounds module.
+ */
+ZombieSoundsInit()
+{
+    // Hook cvars for changes
+    ZombieSoundsHookCvars();
+    
+    // Precache sounds
+    PrecacheSounds();
+}
+
 /**
  * Client is joining the server.
  * 
@@ -98,57 +81,85 @@ ZombieSoundsClientInit(client)
 
 void PrecacheSounds()
 {
+    // Only precache if sounds are enabled
+    if (GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_MOAN_ENABLED]))
+    {
         char sound[PLATFORM_MAX_PATH];
-
-    // Precache and add moan sounds to download table
-    for (int i = SOUND_MOAN_MIN; i <= SOUND_MOAN_MAX; i++)
-    {
-        // Format the sound path with the index
-        Format(sound, sizeof(sound), SOUND_MOAN_PATH, i);
-
-        // Prepend "sound/" to the path for precaching and downloading
+        char path[PLATFORM_MAX_PATH];
         char fullSoundPath[PLATFORM_MAX_PATH];
-        Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
-
-        // Precache the sound
-        PrecacheSound(sound, true);
-
-        // Add the sound to the download table
-        AddFileToDownloadsTable(fullSoundPath);
+        
+        // Get moan path from cvar
+        GetConVarString(g_hCvarsList[CVAR_SEFFECTS_MOAN_PATH], path, sizeof(path));
+        int min = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_MOAN_MIN]);
+        int max = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_MOAN_MAX]);
+        
+        for (int i = min; i <= max; i++)
+        {
+            Format(sound, sizeof(sound), path, i);
+            Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+            PrecacheSound(sound, true);
+            AddFileToDownloadsTable(fullSoundPath);
+        }
     }
-
-    // Precache and add groan sounds to download table
-    for (int i = SOUND_GROAN_MIN; i <= SOUND_GROAN_MAX; i++)
+    
+    if (GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_GROAN_ENABLED]))
     {
-        // Format the sound path with the index
-        Format(sound, sizeof(sound), SOUND_GROAN_PATH, i);
-
-        // Prepend "sound/" to the path for precaching and downloading
+        char sound[PLATFORM_MAX_PATH];
+        char path[PLATFORM_MAX_PATH];
         char fullSoundPath[PLATFORM_MAX_PATH];
-        Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
-
-        // Precache the sound
-        PrecacheSound(sound, true);
-
-        // Add the sound to the download table
-        AddFileToDownloadsTable(fullSoundPath);
+        
+        // Get groan path from cvar
+        GetConVarString(g_hCvarsList[CVAR_SEFFECTS_GROAN_PATH], path, sizeof(path));
+        int min = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_GROAN_MIN]);
+        int max = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_GROAN_MAX]);
+        
+        for (int i = min; i <= max; i++)
+        {
+            Format(sound, sizeof(sound), path, i);
+            Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+            PrecacheSound(sound, true);
+            AddFileToDownloadsTable(fullSoundPath);
+        }
     }
-
-    // Precache and add death sounds to download table
-    for (int i = SOUND_DEATH_MIN; i <= SOUND_DEATH_MAX; i++)
+    
+    if (GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_DEATH_ENABLED]))
     {
-        // Format the sound path with the index
-        Format(sound, sizeof(sound), SOUND_DEATH_PATH, i);
-
-        // Prepend "sound/" to the path for precaching and downloading
+        char sound[PLATFORM_MAX_PATH];
+        char path[PLATFORM_MAX_PATH];
         char fullSoundPath[PLATFORM_MAX_PATH];
-        Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
-
-        // Precache the sound
-        PrecacheSound(sound, true);
-
-        // Add the sound to the download table
-        AddFileToDownloadsTable(fullSoundPath);
+        
+        // Get death path from cvar
+        GetConVarString(g_hCvarsList[CVAR_SEFFECTS_DEATH_PATH], path, sizeof(path));
+        int min = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_DEATH_MIN]);
+        int max = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_DEATH_MAX]);
+        
+        for (int i = min; i <= max; i++)
+        {
+            Format(sound, sizeof(sound), path, i);
+            Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+            PrecacheSound(sound, true);
+            AddFileToDownloadsTable(fullSoundPath);
+        }
+    }
+    
+    if (GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_ENABLED]))
+    {
+        char sound[PLATFORM_MAX_PATH];
+        char path[PLATFORM_MAX_PATH];
+        char fullSoundPath[PLATFORM_MAX_PATH];
+        
+        // Get countdown path from cvar
+        GetConVarString(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_PATH], path, sizeof(path));
+        int min = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_MIN]);
+        int max = GetConVarInt(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_MAX]);
+        
+        for (int i = min; i <= max; i++)
+        {
+            Format(sound, sizeof(sound), path, i);
+            Format(fullSoundPath, sizeof(fullSoundPath), "sound/%s", sound);
+            PrecacheSound(sound, true);
+            AddFileToDownloadsTable(fullSoundPath);
+        }
     }
 }
 
@@ -199,6 +210,12 @@ ZombieSoundsOnClientDeath(client)
         return;
     }
     
+    // Check if death sounds are enabled via cvar
+    if (!GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_DEATH_ENABLED]))
+    {
+        return;
+    }
+    
     // If death sound cvar is disabled, then stop.
     new bool:death = GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_DEATH]);
     if (!death)
@@ -222,6 +239,12 @@ ZombieSoundsOnClientHurt(client)
 {
     // If player isn't a zombie, then stop.
     if (!InfectIsClientInfected(client))
+    {
+        return;
+    }
+    
+    // Check if groan sounds are enabled via cvar
+    if (!GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_GROAN_ENABLED]))
     {
         return;
     }
@@ -251,6 +274,12 @@ ZombieSoundsOnClientHurt(client)
  */
 ZombieSoundsOnClientInfected(client)
 {
+    // Check if moan sounds are enabled via cvar
+    if (!GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_MOAN_ENABLED]))
+    {
+        return;
+    }
+    
     // If interval is set to 0, then stop.
     new Float:interval = GetConVarFloat(g_hCvarsList[CVAR_SEFFECTS_MOAN]);
     if (!interval)
@@ -289,7 +318,7 @@ ZombieSoundsOnCommandsCreate()
 }
 
 /**
- * Gets a random zombie sound from hl2 folder.
+ * Gets a random zombie sound from configured path.
  *
  * @param sound     The randomly picked sound.
  * @param soundtype The type of sound to get. (See enum ZombieSounds)
@@ -297,41 +326,37 @@ ZombieSoundsOnCommandsCreate()
  */    
 bool:ZombieSoundsGetRandomSound(String:sound[], ZombieSounds:soundtype)
 {
-    new soundmin;
-    new soundmax;
-    decl String:soundpath[SOUND_MAX_PATH];
+    // Declare cvar indexes
+    new CvarsList:enabledCvar = CvarsList:-1;
+    new CvarsList:pathCvar = CvarsList:-1;
+    new CvarsList:minCvar = CvarsList:-1;
+    new CvarsList:maxCvar = CvarsList:-1;
     
     switch(soundtype)
     {
         // Find moan sound.
         case Moan:
         {
-            // Copy min and max
-            soundmin = SOUND_MOAN_MIN;
-            soundmax = SOUND_MOAN_MAX;
-            
-            // Copy path
-            strcopy(soundpath, sizeof(soundpath), SOUND_MOAN_PATH);
+            enabledCvar = CVAR_SEFFECTS_MOAN_ENABLED;
+            pathCvar = CVAR_SEFFECTS_MOAN_PATH;
+            minCvar = CVAR_SEFFECTS_MOAN_MIN;
+            maxCvar = CVAR_SEFFECTS_MOAN_MAX;
         }
         // Find groan sound. (zombie shot)
         case Groan:
         {
-            // Copy min and max
-            soundmin = SOUND_GROAN_MIN;
-            soundmax = SOUND_GROAN_MAX;
-            
-            // Copy path
-            strcopy(soundpath, sizeof(soundpath), SOUND_GROAN_PATH);
+            enabledCvar = CVAR_SEFFECTS_GROAN_ENABLED;
+            pathCvar = CVAR_SEFFECTS_GROAN_PATH;
+            minCvar = CVAR_SEFFECTS_GROAN_MIN;
+            maxCvar = CVAR_SEFFECTS_GROAN_MAX;
         }
         // Find death sound.
         case Death:
         {
-            // Copy min and max
-            soundmin = SOUND_DEATH_MIN;
-            soundmax = SOUND_DEATH_MAX;
-            
-            // Copy path
-            strcopy(soundpath, sizeof(soundpath), SOUND_DEATH_PATH);
+            enabledCvar = CVAR_SEFFECTS_DEATH_ENABLED;
+            pathCvar = CVAR_SEFFECTS_DEATH_PATH;
+            minCvar = CVAR_SEFFECTS_DEATH_MIN;
+            maxCvar = CVAR_SEFFECTS_DEATH_MAX;
         }
         // Invalid case given.
         default:
@@ -341,11 +366,30 @@ bool:ZombieSoundsGetRandomSound(String:sound[], ZombieSounds:soundtype)
         }
     }
     
+    // Check if sound type is enabled
+    if (!GetConVarBool(g_hCvarsList[enabledCvar]))
+    {
+        return false;
+    }
+    
+    // Get path and range from cvars
+    decl String:path[PLATFORM_MAX_PATH];
+    GetConVarString(g_hCvarsList[pathCvar], path, sizeof(path));
+    
+    new min = GetConVarInt(g_hCvarsList[minCvar]);
+    new max = GetConVarInt(g_hCvarsList[maxCvar]);
+    
+    // Validate range
+    if (min <= 0 || max <= 0 || min > max)
+    {
+        return false;
+    }
+    
     // Pick a random integer between min and max sound file index.
-    new randsound = GetRandomInt(soundmin, soundmax);
+    new randsound = GetRandomInt(min, max);
     
     // Format random index into sound path.
-    Format(sound, SOUND_MAX_PATH, soundpath, randsound);
+    Format(sound, SOUND_MAX_PATH, path, randsound);
     
     // Found sound.
     return true;
@@ -361,6 +405,16 @@ public Action:ZombieSoundsMoanTimer(Handle:timer, any:client)
 {
     // If client isn't in-game or client is no longer a zombie, then stop.
     if (!IsClientInGame(client) || !InfectIsClientInfected(client))
+    {
+        // Reset timer handle.
+        tSEffectsMoan[client] = INVALID_HANDLE;
+        
+        // Stop timer.
+        return Plugin_Stop;
+    }
+    
+    // Check if moan sounds are enabled via cvar
+    if (!GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_MOAN_ENABLED]))
     {
         // Reset timer handle.
         tSEffectsMoan[client] = INVALID_HANDLE;
@@ -493,6 +547,12 @@ public Action:ZombieSoundsScreamCommand(client, argc)
  */
 public Action:ZombieSoundsMoanCommand(client, argc)
 {
+    // Check if moan sounds are enabled via cvar
+    if (!GetConVarBool(g_hCvarsList[CVAR_SEFFECTS_MOAN_ENABLED]))
+    {
+        return Plugin_Handled;
+    }
+    
     if (IsClientInGame(client) &&
         IsPlayerAlive(client) &&
         InfectIsClientInfected(client) &&
@@ -512,4 +572,89 @@ public Action:ZombieSoundsMoanCommand(client, argc)
 public Action:ZombieSoundsCmdTimer(Handle:timer, any:client)
 {
     g_SEffectsCommandCount[client] = 0;
+}
+
+/**
+ * Zombie sounds cvar change handler.
+ */
+public void ZombieSoundsCvarChanged(Handle convar, const char[] oldValue, const char[] newValue)
+{
+    // Get the cvar name to identify which one changed
+    char cvarName[64];
+    GetConVarName(convar, cvarName, sizeof(cvarName));
+    
+    // Check which cvar changed and take appropriate action
+    if (StrEqual(cvarName, "zr_seffects_moan_enabled") ||
+        StrEqual(cvarName, "zr_seffects_groan_enabled") ||
+        StrEqual(cvarName, "zr_seffects_death_enabled") ||
+        StrEqual(cvarName, "zr_seffects_countdown_enabled"))
+    {
+        // Sound enabled/disabled changed - stop or start timers immediately
+        bool newEnabled = StringToInt(newValue) != 0;
+        bool oldEnabled = StringToInt(oldValue) != 0;
+        
+        if (newEnabled != oldEnabled)
+        {
+            if (StrEqual(cvarName, "zr_seffects_moan_enabled"))
+            {
+                if (!newEnabled)
+                {
+                    // Disable all moan timers
+                    for (int client = 1; client <= MaxClients; client++)
+                    {
+                        if (IsClientInGame(client) && InfectIsClientInfected(client))
+                        {
+                            if (tSEffectsMoan[client] != INVALID_HANDLE)
+                            {
+                                KillTimer(tSEffectsMoan[client]);
+                                tSEffectsMoan[client] = INVALID_HANDLE;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Enable moan timers for all zombies
+                    for (int client = 1; client <= MaxClients; client++)
+                    {
+                        if (IsClientInGame(client) && IsPlayerAlive(client) && InfectIsClientInfected(client))
+                        {
+                            ZombieSoundsOnClientInfected(client);
+                        }
+                    }
+                }
+            }
+            
+            LogEvent(false, LogType_Normal, LOG_CORE_EVENTS, LogModule_SEffects, "Cvar Changed", "Sound effect cvar \"%s\" changed from %s to %s", cvarName, oldValue, newValue);
+        }
+    }
+    else if (StrContains(cvarName, "_path") != -1 || 
+             StrContains(cvarName, "_min") != -1 || 
+             StrContains(cvarName, "_max") != -1)
+    {
+        LogEvent(false, LogType_Normal, LOG_CORE_EVENTS, LogModule_SEffects, "Cvar Changed", "Sound path/range cvar \"%s\" changed from %s to %s. Map restart needed for full effect.", cvarName, oldValue, newValue);
+    }
+}
+
+/**
+ * Hook zombie sounds cvars for changes.
+ */
+void ZombieSoundsHookCvars()
+{
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_MOAN_ENABLED], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_GROAN_ENABLED], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_DEATH_ENABLED], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_ENABLED], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_MOAN_PATH], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_GROAN_PATH], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_DEATH_PATH], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_PATH], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_MOAN_MIN], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_MOAN_MAX], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_GROAN_MIN], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_GROAN_MAX], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_DEATH_MIN], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_DEATH_MAX], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_MIN], ZombieSoundsCvarChanged);
+    HookConVarChange(g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_MAX], ZombieSoundsCvarChanged);
 }

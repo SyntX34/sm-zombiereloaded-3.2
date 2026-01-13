@@ -105,22 +105,21 @@ VEffectsCreateExplosion(const Float:origin[3], flags)
         return;
     }
     
-    // Get and modify flags on explosion.
-    new spawnflags = GetEntProp(explosion, Prop_Data, "m_spawnflags");
-    spawnflags = spawnflags | EXP_NODAMAGE | EXP_NODECAL | flags;
-    
-    // Set modified flags on entity.
-    SetEntProp(explosion, Prop_Data, "m_spawnflags", spawnflags);
-    
-    // Spawn the entity into the world.
-    DispatchSpawn(explosion);
-    
-    // Set the origin of the explosion.
+    // Set the origin of the explosion first.
     DispatchKeyValueVector(explosion, "origin", origin);
     
     // Set fireball material.
     PrecacheModel("materials/sprites/xfireball3.vmt");
     DispatchKeyValue(explosion, "fireballsprite", "materials/sprites/xfireball3.vmt");
+    
+    // Set modified flags on entity BEFORE spawning
+    SetEntProp(explosion, Prop_Data, "m_spawnflags", flags);
+    
+    // Spawn the entity into the world.
+    DispatchSpawn(explosion);
+    
+    // Activate the entity
+    ActivateEntity(explosion);
     
     // Tell the entity to explode.
     AcceptEntityInput(explosion, "Explode");

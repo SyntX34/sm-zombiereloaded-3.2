@@ -193,6 +193,22 @@ enum CvarsList
     Handle:CVAR_ZTELE_AUTOCANCEL_DISTANCE,
     Handle:CVAR_ZHP,
     Handle:CVAR_ZHP_DEFAULT,
+    Handle:CVAR_SEFFECTS_MOAN_ENABLED,
+    Handle:CVAR_SEFFECTS_GROAN_ENABLED,
+    Handle:CVAR_SEFFECTS_DEATH_ENABLED,
+    Handle:CVAR_SEFFECTS_COUNTDOWN_ENABLED,
+    Handle:CVAR_SEFFECTS_MOAN_PATH,
+    Handle:CVAR_SEFFECTS_GROAN_PATH,
+    Handle:CVAR_SEFFECTS_DEATH_PATH,
+    Handle:CVAR_SEFFECTS_COUNTDOWN_PATH,
+    Handle:CVAR_SEFFECTS_MOAN_MIN,
+    Handle:CVAR_SEFFECTS_MOAN_MAX,
+    Handle:CVAR_SEFFECTS_GROAN_MIN,
+    Handle:CVAR_SEFFECTS_GROAN_MAX,
+    Handle:CVAR_SEFFECTS_DEATH_MIN,
+    Handle:CVAR_SEFFECTS_DEATH_MAX,
+    Handle:CVAR_SEFFECTS_COUNTDOWN_MIN,
+    Handle:CVAR_SEFFECTS_COUNTDOWN_MAX,
 }
 
 /**
@@ -444,12 +460,29 @@ CvarsCreate()
     g_hCvarsList[CVAR_VOICE]                            =    CreateConVar("zr_voice",                   "0",                            "(Incomplete) Modify sv_alltalk to obey zombie/human teams instead of t/ct.");
     g_hCvarsList[CVAR_VOICE_ZOMBIES_MUTE]               =    CreateConVar("zr_voice_zombies_mute",      "0",                            "(Incomplete) Only allow humans to communicate, block verbal zombie communication.");
     
-    // Zombie Sounds
     g_hCvarsList[CVAR_SEFFECTS_MOAN]                    =    CreateConVar("zr_seffects_moan",               "30.0",                     "Time between emission of a moan sound from a zombie.");
     g_hCvarsList[CVAR_SEFFECTS_GROAN]                   =    CreateConVar("zr_seffects_groan",              "5",                        "The probability that a groan sound will be emitted from a zombie when shot. ['100' = 1% chance | '50' = 2% chance | '1' = 100% chance]");
     g_hCvarsList[CVAR_SEFFECTS_DEATH]                   =    CreateConVar("zr_seffects_death",              "1",                        "Emit a death sound when a zombie dies.");
+    g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN]               =    CreateConVar("zr_seffects_countdown",          "1",                        "Emit countdown sounds when motherzombies timer start.");
     
-    g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN]                   =    CreateConVar("zr_seffects_countdown",              "1",                        "Emit countdown sounds when motherzombies timer start.");
+    g_hCvarsList[CVAR_SEFFECTS_MOAN_ENABLED]            =    CreateConVar("zr_seffects_moan_enabled",       "1",                        "Enable zombie moan sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_GROAN_ENABLED]           =    CreateConVar("zr_seffects_groan_enabled",      "1",                        "Enable zombie pain/groan sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_DEATH_ENABLED]           =    CreateConVar("zr_seffects_death_enabled",      "1",                        "Enable zombie death sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_ENABLED]       =    CreateConVar("zr_seffects_countdown_enabled",  "1",                        "Enable countdown sounds.");
+    
+    g_hCvarsList[CVAR_SEFFECTS_MOAN_PATH]               =    CreateConVar("zr_seffects_moan_path",          "novahunterz/voice/zombie_voice_idle%d.mp3",   "Path for moan sounds. %d will be replaced with sound index from 1 to zr_seffects_moan_max");
+    g_hCvarsList[CVAR_SEFFECTS_GROAN_PATH]              =    CreateConVar("zr_seffects_groan_path",         "novahunterz/zombiereloaded/pain/zombie_pain%d.mp3", "Path for pain/groan sounds. %d will be replaced with sound index from 1 to zr_seffects_groan_max");
+    g_hCvarsList[CVAR_SEFFECTS_DEATH_PATH]              =    CreateConVar("zr_seffects_death_path",         "novahunterz/zombiereloaded/die/zombie_die%d.mp3", "Path for death sounds. %d will be replaced with sound index from 1 to zr_seffects_death_max");
+    g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_PATH]          =    CreateConVar("zr_seffects_countdown_path",     "novahunterz/zombiereloaded/countdown/%d.mp3", "Path for countdown sounds. %d will be replaced with countdown number from 1 to 10");
+    
+    g_hCvarsList[CVAR_SEFFECTS_MOAN_MIN]                =    CreateConVar("zr_seffects_moan_min",           "1",                        "Minimum sound index for moan sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_MOAN_MAX]                =    CreateConVar("zr_seffects_moan_max",           "14",                       "Maximum sound index for moan sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_GROAN_MIN]               =    CreateConVar("zr_seffects_groan_min",          "1",                        "Minimum sound index for pain/groan sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_GROAN_MAX]               =    CreateConVar("zr_seffects_groan_max",          "6",                        "Maximum sound index for pain/groan sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_DEATH_MIN]               =    CreateConVar("zr_seffects_death_min",          "1",                        "Minimum sound index for death sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_DEATH_MAX]               =    CreateConVar("zr_seffects_death_max",          "3",                        "Maximum sound index for death sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_MIN]           =    CreateConVar("zr_seffects_countdown_min",      "1",                        "Minimum countdown number for countdown sounds.");
+    g_hCvarsList[CVAR_SEFFECTS_COUNTDOWN_MAX]           =    CreateConVar("zr_seffects_countdown_max",      "10",                       "Maximum countdown number for countdown sounds.");
     
     g_hCvarsList[CVAR_SEFFECTS_COMMAND_LIMIT]           =    CreateConVar("zr_seffects_command_limit",      "4",                        "Number of sound commands allowed within the time span, or total limit if time span is disabled. ['0' = Disable sound command limit]");
     g_hCvarsList[CVAR_SEFFECTS_COMMAND_TIMESPAN]        =    CreateConVar("zr_seffects_command_timespan",   "10",                       "Time span for sound command limiter (in seconds). ['0' = Disable time span check | positive number = Time span]");
@@ -541,12 +574,16 @@ CvarsCreate()
     // ===========================
     g_hCvarsList[CVAR_ZHP]                              =    CreateConVar("zr_zhp",             "1",    "Allow player to toggle real HP display as a zombie.");
     g_hCvarsList[CVAR_ZHP_DEFAULT]                      =    CreateConVar("zr_zhp_default",     "1",    "Default ZHP toggle state set on connecting player. [Dependency: zr_zhp]");
-    
-    
+
     // Auto-generate config file if it doesn't exist, then execute.
     AutoExecConfig(true, "zombiereloaded", "sourcemod/zombiereloaded");
 }
 
+/**
+ * Hook cvar changes.
+ * 
+ * @param unhook    If true, cvars will be unhooked, false to hook cvars.
+ */
 /**
  * Hook cvar changes.
  * 
